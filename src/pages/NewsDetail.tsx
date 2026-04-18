@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { News } from '../../shared/types';
 import { formatRelativeTime } from '../utils/date';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { newsApiService } from '../services/newsApi';
 
 const NewsDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,10 +15,16 @@ const NewsDetail = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const res = await fetch(`/api/news/${id}`);
-        const data = await res.json();
-        if (data.success) {
-          setNews(data.data);
+        setLoading(true);
+        // 从新闻列表中查找新闻
+        const response = await newsApiService.getNews();
+        if (response.success) {
+          const foundNews = response.data.find(n => n.id === id);
+          if (foundNews) {
+            setNews(foundNews);
+          } else {
+            navigate('/');
+          }
         } else {
           navigate('/');
         }
@@ -55,12 +62,12 @@ const NewsDetail = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 mb-4">新闻不存在</p>
-          <Link
-            to="/"
+          <button
+            onClick={() => navigate('/')}
             className="text-blue-500 hover:text-blue-600 font-medium"
           >
             返回首页
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -94,7 +101,18 @@ const NewsDetail = () => {
 
           <div className="p-6 md:p-10">
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{news.sourceLogo}</span>
+              {news.sourceLogo ? (
+                <img
+                  src={news.sourceLogo}
+                  alt={news.source}
+                  className="w-8 h-8 rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32';
+                  }}
+                />
+              ) : (
+                <span className="text-3xl">📰</span>
+              )}
               <div>
                 <span className="font-semibold text-gray-900">{news.source}</span>
                 <span className="text-gray-400 mx-2">•</span>

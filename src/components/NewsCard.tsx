@@ -37,7 +37,18 @@ const NewsCard = ({ news }: NewsCardProps) => {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">{news.sourceLogo}</span>
+              {news.sourceLogo ? (
+                <img
+                  src={news.sourceLogo}
+                  alt={news.source}
+                  className="w-6 h-6 rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/24';
+                  }}
+                />
+              ) : (
+                <span className="text-xl">📰</span>
+              )}
               <span className="text-sm font-medium text-gray-700">{news.source}</span>
               <span className="text-sm text-gray-400">•</span>
               <span className="text-sm text-gray-500">{formatRelativeTime(news.publishedAt)}</span>

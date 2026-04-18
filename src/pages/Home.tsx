@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { News, HotSearch } from '../../shared/types';
 import NewsCard from '../components/NewsCard';
 import { RefreshCw, ExternalLink } from 'lucide-react';
+import { newsApiService } from '../services/newsApi';
 
 interface Source {
   name: string;
@@ -16,11 +17,48 @@ interface Platform {
   logo: string;
 }
 
+// 媒体源配置
+const sourcesConfig: Source[] = [
+  // 主流媒体
+  { name: '新华社', url: 'https://www.xinhuanet.com/', logo: 'https://www.xinhuanet.com/favicon.ico' },
+  { name: '人民日报', url: 'https://www.people.com.cn/', logo: 'https://www.people.com.cn/favicon.ico' },
+  { name: '央视新闻', url: 'https://news.cctv.com/', logo: 'https://news.cctv.com/favicon.ico' },
+  { name: '澎湃新闻', url: 'https://www.thepaper.cn/', logo: 'https://www.thepaper.cn/favicon.ico' },
+  { name: '环球时报', url: 'https://www.huanqiu.com/', logo: 'https://www.huanqiu.com/favicon.ico' },
+  { name: '中国新闻网', url: 'https://www.chinanews.com.cn/', logo: 'https://www.chinanews.com.cn/favicon.ico' },
+  
+  // 科技媒体
+  { name: '少数派', url: 'https://sspai.com/', logo: 'https://sspai.com/favicon.ico' },
+  { name: 'iO', url: 'https://www.iozh.com/', logo: 'https://www.iozh.com/favicon.ico' },
+  { name: 'IT之家', url: 'https://www.ithome.com/', logo: 'https://www.ithome.com/favicon.ico' },
+  { name: '36氪', url: 'https://36kr.com/', logo: 'https://36kr.com/favicon.ico' },
+  { name: '爱范儿', url: 'https://www.ifanr.com/', logo: 'https://www.ifanr.com/favicon.ico' },
+  
+  // 财经媒体
+  { name: '第一财经', url: 'https://www.yicai.com/', logo: 'https://www.yicai.com/favicon.ico' },
+  { name: '晚点', url: 'https://www.latepost.com/', logo: 'https://www.latepost.com/favicon.ico' },
+  { name: '界面', url: 'https://www.jiemian.com/', logo: 'https://www.jiemian.com/favicon.ico' },
+  { name: '财新网', url: 'https://www.caixin.com/', logo: 'https://www.caixin.com/favicon.ico' },
+  { name: '华尔街见闻', url: 'https://wallstreetcn.com/', logo: 'https://wallstreetcn.com/favicon.ico' },
+  
+  // 体育媒体
+  { name: '虎扑', url: 'https://www.hupu.com/', logo: 'https://www.hupu.com/favicon.ico' },
+  { name: '懂球帝', url: 'https://www.dongqiudi.com/', logo: 'https://www.dongqiudi.com/favicon.ico' },
+  { name: 'ESPN中文', url: 'https://www.espn.com.cn/', logo: 'https://www.espn.com.cn/favicon.ico' },
+  { name: '腾讯体育', url: 'https://sports.qq.com/', logo: 'https://sports.qq.com/favicon.ico' },
+];
+
+// 平台配置
+const platformsConfig: Platform[] = [
+  { id: 'weibo', name: '微博', logo: '📱' },
+  { id: 'douyin', name: '抖音', logo: '🎵' },
+  { id: 'bilibili', name: '哔哩哔哩', logo: '📺' },
+  { id: 'xiaohongshu', name: '小红书', logo: '📖' },
+];
+
 export default function Home() {
   const [news, setNews] = useState<News[]>([]);
-  const [sources, setSources] = useState<Source[]>([]);
   const [hotSearches, setHotSearches] = useState<HotSearch[]>([]);
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [mediaCategory, setMediaCategory] = useState<string>('mainstream');
   const [professionalCategory, setProfessionalCategory] = useState<string | null>(null);
@@ -30,27 +68,9 @@ export default function Home() {
   const fetchNews = async () => {
     try {
       setLoading(true);
-      let url = '/api/news';
-      const params = new URLSearchParams();
-      
-      if (mediaCategory) {
-        params.append('mediaCategory', mediaCategory);
-      }
-      if (professionalCategory) {
-        params.append('professionalCategory', professionalCategory);
-      }
-      if (selectedSource) {
-        params.append('source', selectedSource);
-      }
-      
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setNews(data.data);
+      const response = await newsApiService.getNews(mediaCategory, professionalCategory, selectedSource);
+      if (response.success) {
+        setNews(response.data);
       }
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -59,60 +79,16 @@ export default function Home() {
     }
   };
 
-  const fetchSources = async () => {
-    try {
-      let url = '/api/news/sources';
-      const params = new URLSearchParams();
-      
-      if (mediaCategory) {
-        params.append('mediaCategory', mediaCategory);
-      }
-      if (professionalCategory) {
-        params.append('professionalCategory', professionalCategory);
-      }
-      
-      if (params.toString()) {
-        url += '?' + params.toString();
-      }
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setSources(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching sources:', error);
-    }
-  };
-
   const fetchHotSearches = async (platform: string) => {
     try {
-      const url = `/api/hot-searches?platform=${encodeURIComponent(platform)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setHotSearches(data.data);
+      const response = await newsApiService.getHotSearches(platform);
+      if (response.success) {
+        setHotSearches(response.data);
       }
     } catch (error) {
       console.error('Error fetching hot searches:', error);
     }
   };
-
-  const fetchPlatforms = async () => {
-    try {
-      const res = await fetch('/api/hot-searches/platforms');
-      const data = await res.json();
-      if (data.success) {
-        setPlatforms(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching platforms:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchPlatforms();
-  }, []);
 
   useEffect(() => {
     fetchHotSearches(selectedPlatform);
@@ -120,12 +96,12 @@ export default function Home() {
 
   useEffect(() => {
     setSelectedSource(null);
-    fetchSources();
+    fetchNews();
   }, [mediaCategory, professionalCategory]);
 
   useEffect(() => {
     fetchNews();
-  }, [mediaCategory, professionalCategory, selectedSource]);
+  }, [selectedSource]);
 
   const getRankColor = (rank: number) => {
     if (rank === 1) return 'text-red-500 font-bold';
@@ -133,6 +109,23 @@ export default function Home() {
     if (rank === 3) return 'text-yellow-500 font-bold';
     return 'text-gray-500';
   };
+
+  // 按媒体分类筛选媒体源
+  const filteredSources = sourcesConfig.filter(source => {
+    if (mediaCategory === 'mainstream') {
+      return ['新华社', '人民日报', '央视新闻', '澎湃新闻', '环球时报', '中国新闻网'].includes(source.name);
+    } else if (mediaCategory === 'professional') {
+      if (professionalCategory === 'tech') {
+        return ['少数派', 'iO', 'IT之家', '36氪', '爱范儿'].includes(source.name);
+      } else if (professionalCategory === 'finance') {
+        return ['第一财经', '晚点', '界面', '财新网', '华尔街见闻'].includes(source.name);
+      } else if (professionalCategory === 'sports') {
+        return ['虎扑', '懂球帝', 'ESPN中文', '腾讯体育'].includes(source.name);
+      }
+      return true;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -245,7 +238,7 @@ export default function Home() {
                 >
                   全部
                 </button>
-                {sources.map((source) => (
+                {filteredSources.map((source) => (
                   <button
                     key={source.name}
                     onClick={() => setSelectedSource(source.name)}
@@ -255,7 +248,15 @@ export default function Home() {
                         : 'bg-white text-gray-600 hover:bg-gray-100 shadow-sm'
                     }`}
                   >
-                    <span>{source.logo}</span>
+                    <img
+                      src={source.logo}
+                      alt={source.name}
+                      className="w-5 h-5 rounded"
+                      onError={(e) => {
+                        // 如果logo加载失败，使用默认图标
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/20';
+                      }}
+                    />
                     {source.name}
                   </button>
                 ))}
@@ -299,7 +300,7 @@ export default function Home() {
               
               {/* 平台切换 */}
               <div className="flex flex-wrap gap-2 mb-6">
-                {platforms.map((platform) => (
+                {platformsConfig.map((platform) => (
                   <button
                     key={platform.id}
                     onClick={() => setSelectedPlatform(platform.id)}
