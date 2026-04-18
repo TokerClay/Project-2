@@ -1,16 +1,27 @@
 
 import { Router, Request, Response } from 'express';
-import { mockNews, sources } from '../data/newsData';
+import { mockNews, allSources, mainstreamSources, techSources, financeSources, sportsSources } from '../data/newsData';
 import { NewsListResponse, NewsDetailResponse } from '../../shared/types';
 
 const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
   const sourceFilter = req.query.source as string;
+  const mediaCategoryFilter = req.query.mediaCategory as string;
+  const professionalCategoryFilter = req.query.professionalCategory as string;
+  
   let filteredNews = [...mockNews];
 
   if (sourceFilter) {
     filteredNews = filteredNews.filter(news => news.source === sourceFilter);
+  }
+
+  if (mediaCategoryFilter) {
+    filteredNews = filteredNews.filter(news => news.mediaCategory === mediaCategoryFilter);
+  }
+
+  if (professionalCategoryFilter) {
+    filteredNews = filteredNews.filter(news => news.professionalCategory === professionalCategoryFilter);
   }
 
   const response: NewsListResponse = {
@@ -23,9 +34,22 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 router.get('/sources', (req: Request, res: Response) => {
+  const mediaCategoryFilter = req.query.mediaCategory as string;
+  const professionalCategoryFilter = req.query.professionalCategory as string;
+  
+  let filteredSources = [...allSources];
+
+  if (mediaCategoryFilter) {
+    filteredSources = filteredSources.filter(source => source.mediaCategory === mediaCategoryFilter);
+  }
+
+  if (professionalCategoryFilter) {
+    filteredSources = filteredSources.filter(source => source.professionalCategory === professionalCategoryFilter);
+  }
+
   res.json({
     success: true,
-    data: sources,
+    data: filteredSources,
   });
 });
 
